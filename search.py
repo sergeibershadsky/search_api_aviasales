@@ -13,8 +13,9 @@ from datetime import datetime, timedelta
 from itertools import product
 from multiprocessing import Process, Lock
 
-class Search():
-    '''
+
+class Search:
+    """
     Search is ticket finder, makes request on Aviasales server by API and builds routes from requests data.
 
     One request contains data for flights just between two citys by one month. Next this data passed to
@@ -27,23 +28,30 @@ class Search():
     3) Called find_short_in_time_route or find_cheapest_route for sorted all routes by price or by time.
 
     I recommend to complete route for 2-7 citys and period not more for 1 month.
-    '''
+    """
 
     def __init__(self, token="TOKEN"):
         self.token = token
 
     def find_flights_fo_period(self, airports, start_date, end_date, s_period, e_period, home, finish):
         """To convert period for all separate dates.
-           To call request .
-           To save list with dates of flights for all period.
+        To call request .
+        To save list with dates of flights for all period.
         """
 
         different_month = datetime_utils.period_for_month(start_date, end_date)
         flights_on_data = []
         for i in range(len(different_month)):
             data = (different_month)[i]
-            flights = self.offers(origin=airports[0], destination=airports[1], departure_at=data,
-                                  return_at='', market="ru", limit=1000, sorting="price")
+            flights = self.offers(
+                origin=airports[0],
+                destination=airports[1],
+                departure_at=data,
+                return_at="",
+                market="ru",
+                limit=1000,
+                sorting="price",
+            )
             if i == 0 and flights != None:
                 flights_on_data = flights
             elif flights == None:
@@ -81,6 +89,7 @@ class Search():
         # Here is stores instances class of Route()
         paths = []
         visited = {node: True}
+
         def dfs_circle(G, airport: Any, path: Route):
             """
             It is recursive func, which calling for circle route (start airport = finish airport)
@@ -97,7 +106,6 @@ class Search():
             :return: None
             """
             for neighbor in graph.neighbors(airport):
-
                 flights = []  # TODO: забрать edges между airport и neighbor из графа
                 for u, v, d in G.edges(data=True):
                     if u == airport and v == neighbor:
@@ -144,8 +152,9 @@ class Search():
             dfs_not_circle(graph, node, finish, r)
         return paths
 
-
-    def compute_all_routes(self, start_date, end_date, airports, start_period, end_period, home, finish, tranzit, hate_airl):
+    def compute_all_routes(
+        self, start_date, end_date, airports, start_period, end_period, home, finish, tranzit, hate_airl
+    ):
         """
         :param start_date and end_date : str, in format 'YYYY.MM.DD', means date of first flight and date of last flight.
         :param start_period and end_period: list with str,  in format ['YYYY.MM.DD', 'YYYY.MM.DD'],
@@ -170,8 +179,13 @@ class Search():
             hate_airl = self.convert_name_airlines_to_iata(hate_airl)
         start_time = time.time()
         flights, combinations_airports, arr_period_date = self.collects_all_flights_for_all_routes(
-            start_date=start_date, end_date=end_date, airports=airports, start_period=start_period,
-            end_period=end_period, home=home, finish=finish
+            start_date=start_date,
+            end_date=end_date,
+            airports=airports,
+            start_period=start_period,
+            end_period=end_period,
+            home=home,
+            finish=finish,
         )
         end_time = time.time()
         execution_time = end_time - start_time
@@ -195,41 +209,59 @@ class Search():
                     elif time_data[arr_period_date[j]] == None:
                         continue
                     else:
-                         data_for_one_flight = time_data[arr_period_date[j]]
-                         if len(hate_airl) > 0:
-                             for airline in hate_airl:
-                                 if data_for_one_flight['airline'] == airline:
-                                     continue
-                                 else:
-                                     G.add_edge(i[0], i[1], weight=data_for_one_flight['price'],
-                                                time=data_for_one_flight['departure_at'],
-                                                time_in_sky=data_for_one_flight['duration'],
-                                                airlines=data_for_one_flight['airline'],
-                                                link=data_for_one_flight['link'])
-                         else:
-                             G.add_edge(i[0], i[1], weight=data_for_one_flight['price'],
-                                        time=data_for_one_flight['departure_at'],
-                                        time_in_sky=data_for_one_flight['duration'],
-                                        airlines=data_for_one_flight['airline'], link=data_for_one_flight['link'])
+                        data_for_one_flight = time_data[arr_period_date[j]]
+                        if len(hate_airl) > 0:
+                            for airline in hate_airl:
+                                if data_for_one_flight["airline"] == airline:
+                                    continue
+                                else:
+                                    G.add_edge(
+                                        i[0],
+                                        i[1],
+                                        weight=data_for_one_flight["price"],
+                                        time=data_for_one_flight["departure_at"],
+                                        time_in_sky=data_for_one_flight["duration"],
+                                        airlines=data_for_one_flight["airline"],
+                                        link=data_for_one_flight["link"],
+                                    )
+                        else:
+                            G.add_edge(
+                                i[0],
+                                i[1],
+                                weight=data_for_one_flight["price"],
+                                time=data_for_one_flight["departure_at"],
+                                time_in_sky=data_for_one_flight["duration"],
+                                airlines=data_for_one_flight["airline"],
+                                link=data_for_one_flight["link"],
+                            )
                 elif time_data[arr_period_date[j]] == None:
                     continue
                 else:
-                     data_for_one_flight = time_data[arr_period_date[j]]
-                     if len(hate_airl) > 0:
-                         for airline in hate_airl:
-                             if data_for_one_flight['airline'] == airline:
-                                 continue
-                             else:
-                                 G.add_edge(i[0], i[1], weight=data_for_one_flight['price'],
-                                            time=data_for_one_flight['departure_at'],
-                                            time_in_sky=data_for_one_flight['duration'],
-                                            airlines=data_for_one_flight['airline'],
-                                            link=data_for_one_flight['link'])
-                     else:
-                         G.add_edge(i[0], i[1], weight=data_for_one_flight['price'],
-                                    time=data_for_one_flight['departure_at'],
-                                    time_in_sky=data_for_one_flight['duration'],
-                                    airlines=data_for_one_flight['airline'], link=data_for_one_flight['link'])
+                    data_for_one_flight = time_data[arr_period_date[j]]
+                    if len(hate_airl) > 0:
+                        for airline in hate_airl:
+                            if data_for_one_flight["airline"] == airline:
+                                continue
+                            else:
+                                G.add_edge(
+                                    i[0],
+                                    i[1],
+                                    weight=data_for_one_flight["price"],
+                                    time=data_for_one_flight["departure_at"],
+                                    time_in_sky=data_for_one_flight["duration"],
+                                    airlines=data_for_one_flight["airline"],
+                                    link=data_for_one_flight["link"],
+                                )
+                    else:
+                        G.add_edge(
+                            i[0],
+                            i[1],
+                            weight=data_for_one_flight["price"],
+                            time=data_for_one_flight["departure_at"],
+                            time_in_sky=data_for_one_flight["duration"],
+                            airlines=data_for_one_flight["airline"],
+                            link=data_for_one_flight["link"],
+                        )
 
         all_routes = self.find_paths_of_length(G, home, path_len=(len(airports) + 1), finish=finish, tranzit=tranzit)
         end_time = time.time()
@@ -263,8 +295,9 @@ class Search():
             new_arr_t.append(routes[i])
         return new_arr_t, sorted_time
 
-    def collects_all_flights_for_all_routes(self, start_date, end_date, airports, start_period, end_period, home,
-                                            finish):
+    def collects_all_flights_for_all_routes(
+        self, start_date, end_date, airports, start_period, end_period, home, finish
+    ):
         """
         Called find_flights_fo_period and to append all arrays with flights on different routes in dict
         :return: dict, key = route, value = arr with all flights
@@ -290,8 +323,9 @@ class Search():
         # вызвать функцию со всеми возможными парами аэропортов
         dict = {}
         for idx, pair_air in enumerate(combinations_airports):
-            req_for_period = self.find_flights_fo_period(pair_air, start_date, end_date, start_period,
-                                                         end_period, home, finish)
+            req_for_period = self.find_flights_fo_period(
+                pair_air, start_date, end_date, start_period, end_period, home, finish
+            )
             dict[pair_air] = req_for_period
         arr_period_dates = datetime_utils.convert_period_for_dates(start_date, end_date)
         return dict, combinations_airports, arr_period_dates
@@ -299,23 +333,26 @@ class Search():
     def patricular_url_for_req(self, *args, **kwargs):
         return self.url_for_req(feature="v3/prices_for_dates?", *args, **kwargs)
 
-    def url_for_req(self, origin, destination, departure_at, feature, market="ru", limit=1000, sorting="price",
-                    return_at=''):
+    def url_for_req(
+        self, origin, destination, departure_at, feature, market="ru", limit=1000, sorting="price", return_at=""
+    ):
         """
         Here is constructed url for request to Aviasales server by API
         """
-        url = f'https://api.travelpayouts.com/aviasales/{feature}' \
-              f'origin={origin}' \
-              f'&destination={destination}' \
-              f'&departure_at={departure_at}' \
-              f'&return_at={return_at}' \
-              f'&sorting={sorting}' \
-              f'&limit={limit}&token={self.token}'
+        url = (
+            f"https://api.travelpayouts.com/aviasales/{feature}"
+            f"origin={origin}"
+            f"&destination={destination}"
+            f"&departure_at={departure_at}"
+            f"&return_at={return_at}"
+            f"&sorting={sorting}"
+            f"&limit={limit}&token={self.token}"
+        )
         return url
 
     def request(self, url: str) -> Dict[str, Union[bool, List[Dict[str, Any]], str]]:
         """This function makes a request to Aviasales"""
-        headers = {'Accept-Encoding': 'gzip, deflate'}
+        headers = {"Accept-Encoding": "gzip, deflate"}
         res = requests.get(url, headers=headers)
         json_data = res.text
         py_data = json.loads(json_data)
@@ -334,17 +371,17 @@ class Search():
             duration.append(idx["duration"])
             airline.append(idx["airline"])
             link.append(idx["link"])
-            transfers.append(idx['transfers'])
+            transfers.append(idx["transfers"])
 
         flight_for_month = {}
         for i in range(len(prices)):
             flight = {}
-            flight['price'] = prices[i]
-            flight['departure_at'] = d_time[i]
-            flight['duration'] = duration[i]
-            flight['airline'] = airline[i]
-            flight['link'] = link[i]
-            flight['transfers'] = transfers[i]
+            flight["price"] = prices[i]
+            flight["departure_at"] = d_time[i]
+            flight["duration"] = duration[i]
+            flight["airline"] = airline[i]
+            flight["link"] = link[i]
+            flight["transfers"] = transfers[i]
             date_flight = datetime_utils.format_big_to_small(d_time[i])
             flight_for_month[str(date_flight)] = flight
         return flight_for_month
@@ -353,10 +390,10 @@ class Search():
         url = self.patricular_url_for_req(**kwargs)
         py_data = self.request(url)
 
-        if py_data['data'] == [] or py_data['success'] == False:
+        if py_data["data"] == [] or py_data["success"] == False:
             return
         else:
-            flight_for_month = self.flight_for_month(py_data['data'])
+            flight_for_month = self.flight_for_month(py_data["data"])
             return flight_for_month
 
     def convert_city_to_air(self, citys):
@@ -390,4 +427,3 @@ class Search():
         for name_company in airlines:
             iata_airlines.append(dict_airlines[name_company])
         return iata_airlines
-

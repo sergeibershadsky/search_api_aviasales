@@ -1,8 +1,9 @@
-import re
-from search import Search
-import air_iata
 import datetime
+import re
+
+import air_iata
 import sql_users
+
 
 class SearchRequestData:
     """
@@ -14,16 +15,15 @@ class SearchRequestData:
     Data also added to SQL(it is important because might happen with bot and bot will be falling down,
     or will download updates)
     """
+
     def __init__(self, user_id):
-        self.start_date = None
-        self.end_date = None
-        self.airports = []
-        self.start_period = None
-        self.end_period = None
-        self.home = None
-        self.finish = None
-        self.tranzit = []
-        self.hate_airl = []
+        self.airports: list[str] = []
+        # self.start_period = None
+        # self.end_period = None
+        # self.home = None
+        # self.finish = None
+        # self.tranzit = []
+        # self.hate_airl = []
         self.user_id = user_id
 
     def append_airport(self, airport: str):
@@ -31,18 +31,17 @@ class SearchRequestData:
         Added not first and not last airport
         """
         self.airports.append(airport)
-        sql_users.append_airports(self.user_id, airport)
 
     def set_start_date(self, first_value: str, second_value: str):
         """
         :param first_value: date of first departure or first date from period of first departure
         :param second_value: second date from period of first departure
         """
-        date_pattern = r'\d{4}-\d{2}-\d{2}'
+        date_pattern = r"\d{4}-\d{2}-\d{2}"
 
         if second_value == None:
             if re.fullmatch(date_pattern, str(first_value)):
-                first_value = (str(first_value)).replace('-', '.')
+                first_value = (str(first_value)).replace("-", ".")
                 self.start_date = first_value
                 self.start_period = [first_value, first_value]
                 sql_users.append_start_date(self.user_id, first_value)
@@ -51,9 +50,9 @@ class SearchRequestData:
 
         elif first_value == None:
             if re.fullmatch(date_pattern, second_value):
-                second_value = (str(second_value)).replace('-', '.')
-                first_date = datetime.datetime.strptime(self.start_date, '%Y.%m.%d')
-                second_date = datetime.datetime.strptime(second_value, '%Y.%m.%d')
+                second_value = (str(second_value)).replace("-", ".")
+                first_date = datetime.datetime.strptime(self.start_date, "%Y.%m.%d")
+                second_date = datetime.datetime.strptime(second_value, "%Y.%m.%d")
                 if second_date < first_date or (second_date - first_date).days >= 21:
                     return False
                 else:
@@ -66,8 +65,8 @@ class SearchRequestData:
         Added time for tranzit in city,
         tranzit is str in format days or hours. Checking is it contain 'д' or 'ч'
         """
-        tranzit_pattern_days = r'^(\d+)[д]$'
-        tranzit_pattern_hours = r'^(\d+)[ч]$'
+        tranzit_pattern_days = r"^(\d+)[д]$"
+        tranzit_pattern_hours = r"^(\d+)[ч]$"
         match_d = re.match(tranzit_pattern_days, value)
         match_h = re.match(tranzit_pattern_hours, value)
         if match_d:
@@ -85,7 +84,6 @@ class SearchRequestData:
         else:
             return False
 
-
     def append_hate_airl(self, airl: str):
         dict_airlines = air_iata.air_iata()
         if airl in dict_airlines:
@@ -101,11 +99,11 @@ class SearchRequestData:
         sql_users.append_home(self.user_id, home)
         sql_users.append_airports(self.user_id, home)
 
-
     def append_circle(self, fact: bool):
         if fact == True:
             self.finish = self.home
             sql_users.append_finish(self.user_id, self.home)
+
     def append_finish_airport(self, airport):
         if airport != self.home:
             self.finish = str(airport)
@@ -117,12 +115,12 @@ class SearchRequestData:
             return False
 
     def append_date_or_period_to_finish(self, first_value: str, second_value: str):
-        date_pattern = r'\d{4}-\d{2}-\d{2}'
+        date_pattern = r"\d{4}-\d{2}-\d{2}"
         if second_value == None:
             if re.fullmatch(date_pattern, str(first_value)):
-                first_value = (str(first_value)).replace('-', '.')
-                first_date = datetime.datetime.strptime(self.start_date, '%Y.%m.%d')
-                second_date = datetime.datetime.strptime(first_value, '%Y.%m.%d')
+                first_value = (str(first_value)).replace("-", ".")
+                first_date = datetime.datetime.strptime(self.start_date, "%Y.%m.%d")
+                second_date = datetime.datetime.strptime(first_value, "%Y.%m.%d")
                 if second_date < first_date:
                     return False
                 if (second_date - first_date).days >= 31:
@@ -137,26 +135,29 @@ class SearchRequestData:
 
         elif first_value == None:
             if re.fullmatch(date_pattern, str(second_value)):
-                second_value = (str(second_value)).replace('-', '.')
-                first_date = datetime.datetime.strptime(self.end_date, '%Y.%m.%d')
-                second_date = datetime.datetime.strptime(second_value, '%Y.%m.%d')
-                second_value = (str(second_value)).replace('-', '.')
+                second_value = (str(second_value)).replace("-", ".")
+                first_date = datetime.datetime.strptime(self.end_date, "%Y.%m.%d")
+                second_date = datetime.datetime.strptime(second_value, "%Y.%m.%d")
+                second_value = (str(second_value)).replace("-", ".")
                 if second_date < first_date:
                     return False
 
                 else:
-                   self.end_period = [self.end_date, second_value]
-                   sql_users.append_end_period(self.user_id, [self.end_date, second_value])
-                   self.end_date = second_value
-                   sql_users.append_end_date(self.user_id, second_value)
+                    self.end_period = [self.end_date, second_value]
+                    sql_users.append_end_period(self.user_id, [self.end_date, second_value])
+                    self.end_date = second_value
+                    sql_users.append_end_date(self.user_id, second_value)
                 return True
 
     def append_start_date_exception_sql(self, date):
         self.start_date = date
+
     def append_home_exception_sql(self, home):
         self.home = str(home)
+
     def append_time_tranzit_exception_sql(self, value):
         self.tranzit.append(value)
+
     def append_finish_exception_sql(self, value):
         self.finish = value
 
@@ -165,12 +166,23 @@ class SearchRequestData:
 
     def append_end_period_exception_sql(self, value):
         self.end_period = value
+
     def append_end_date_exception_sql(self, value):
         self.end_date = value
+
     def append_hate_airl_exception_sql(self, value):
         self.hate_airl = value
 
     def start(self):
         """This func is called last, is return all data"""
-        return self.start_date, self.end_date, self.airports, self.start_period, self.end_period, \
-               self.home, self.finish, self.tranzit, self.hate_airl
+        return (
+            self.start_date,
+            self.end_date,
+            self.airports,
+            self.start_period,
+            self.end_period,
+            self.home,
+            self.finish,
+            self.tranzit,
+            self.hate_airl,
+        )

@@ -1,0 +1,9 @@
+pandas
+numpy
+requests
+pyTelegramBotAPI
+python-telegram-bot-calendar
+networkx
+peewee
+ujson
+pytest
